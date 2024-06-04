@@ -37,10 +37,10 @@ An example script that calculates a heavy rainfall metric for use in hybrid rain
 
 ## Inputs required
 
-- gpm_pr_anom_event.nc : GPM anomaly for event period
-- Kelv_event.nc : Kelvin wave activity for event period
-- R1_event.nc : R1 wave activity for event period
-- WMRG_event.nc : WMRG wave activity for event period
+- gpm_pr_anom_event.nc : GPM-IMERG anomaly for event period
+- Kelv_event.nc : ERA5 Kelvin wave activity for event period
+- R1_event.nc : ERA5 R1 wave activity for event period
+- WMRG_event.nc : ERA5 WMRG wave activity for event period
 - GPM_hiw_pc10_PM_DJF.nc and GPM_hiw_pc10_PM_SON.nc : heavy rainfall index for GPM-IMERG calculated using calc_hiw_data.py
 - phase_{w}_99.5-104.5.nc where w is 'Kelv', 'R1' and 'WMRG' : wave phase information for GloSea6 forecasts for longitude range 99.5-104.5
 - pi_PM_DJF_*_pc10.nc : conditional probabilities for various wave combinations, calculated using hybrid_functions.py
