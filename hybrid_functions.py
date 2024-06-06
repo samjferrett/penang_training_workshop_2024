@@ -88,8 +88,10 @@ def mask_gpm(gpm_nc,region='PM',regrid=False,res=1.):
 
     #subset rainfall data to SE region and load mask
     GPM_nc = gpm_nc.sel(lat=slice(-25,25),lon=slice(85,160))
-    ws_path = '/gws/nopw/j04/ncas_climate_vol1/users/bc917929/'
-    mask_nc = xr.open_dataset(f"{ws_path}GPM_Final/IMERG_land_sea_mask.nc").landseamask.sel(lat=slice(-25,25),lon=slice(85,160))
+    
+    #put in own dir here for GPM-IMERG mask ata
+    ws_path = './'
+    mask_nc = xr.open_dataset(f"{ws_path}IMERG_land_sea_mask.nc").landseamask.sel(lat=slice(-25,25),lon=slice(85,160))
 
     # masks for the diagonal regions PM and WI
     if region == 'PM':
@@ -139,6 +141,23 @@ def mask_gpm(gpm_nc,region='PM',regrid=False,res=1.):
     return GPM_masked
 
 def prob_construct_waves(region='EM',seas='DJF',waves=['Kelv','R1'],pc=10):
+    '''
+    Calculate and save conditional probabilities as described in Ferrett et al (2023)
+
+    Inputs
+    ---
+    region     - str: region string, see documentation for region definitions
+    seas       - str: string of season for probabilities to be calculated (DJF, MAM, JJA, SON)
+    waves      - list: list of waves to be used in construction of hybrid forecast, one of :
+                    ['Kelv'],['R1'],['WMRG'],['Kelv','R1'],['Kelv','WMRG'],['R1','WMRG']
+    pc         - int: frequency of heavy rainfall event, default 10 i.e. occuring 10% of the time in 
+                    climatology
+
+    Outputs
+    ---
+    pi         - xr.DataArray: Conditional probability of the phase space defined by waves for the given parameters
+    
+    '''
     if len(waves)>2:
         raise Exception("Can only be calculated for 1 or 2 waves")
         
@@ -157,7 +176,9 @@ def prob_construct_waves(region='EM',seas='DJF',waves=['Kelv','R1'],pc=10):
     }[region]
     lon = [int(l-2.5),int(l+2.5)]
 
+    #phases of waves from era5
     wave_nc = xr.open_dataset('./inputs/wave_phases_era5_2020-2023.nc')
+    #calculated using calc_hiw_data.py
     hiw_ind = xr.open_dataset(f'./inputs/GPM_hiw_pc{pc:02d}_{region}_{seas}.nc').sel(time=slice('2001','2014'))
 
     nbins = 2 if len(waves)==2 else 3
@@ -218,18 +239,30 @@ def prob_construct_waves(region='EM',seas='DJF',waves=['Kelv','R1'],pc=10):
 #=======================================
 
 def retrieve_func_dual(pi,i,j):
+    '''
+    Retrieve conditional probability from pi given phase i and phase j in a 
+    dual wave phase space
+    '''
     if pd.isnull(i) or pd.isnull(j):
         return np.nan
     else:
         return pi.loc[i][j]
 
 def retrieve_func_single(pi,i):
+    '''
+    Retrieve conditional probability from pi given phase i in a 
+    single wave phase space
+    '''
     if pd.isnull(i):
         return np.nan
     else:
         return pi.loc[i]
 
 def create_phase(phase,amp,max_amp=2):
+    '''
+    Combine phase and amp to create a combined phase space
+    '''
+    
     amp_dis = xr.where(np.isnan(amp),np.nan,np.floor(amp))
     amp_dis = xr.where(amp_dis>max_amp,max_amp,amp_dis)
 
@@ -256,7 +289,9 @@ class HybridWave:
         self.wave_phases = {}
         
     def load_wave(self,wave='Kelv'):
-        ncs = xr.open_mfdataset(f"/gws/nopw/j04/ncas_climate_vol1/users/bc917929/GLOSEA6_wave/daily_filt/*/*/*{wave}*.nc")
+        #insert own dir for forecast wave data
+        in_dir = './'
+        ncs = xr.open_mfdataset(f"{in_dir}/*{wave}*.nc")
         self.wave_ncs[wave] = ncs
         
     def calc_phase(self,wave='Kelv'):
@@ -288,8 +323,10 @@ class HybridWave:
         print(y_ind)
         x_ind = x_ind/x_ind.isel(lead=0).std(['time','number'])
         y_ind = y_ind/y_ind.isel(lead=0).std(['time','number'])
-
-        xr.merge(wave_phase(x_ind,y_ind,wave)).to_netcdf(f"/gws/nopw/j04/ncas_climate_vol1/users/bc917929/GLOSEA6_wave/phase/phase_{wave}_{self.wave_lon[0]}-{self.wave_lon[1]}.nc")
+        
+        #insert own out data directory
+        out_dir = './'
+        xr.merge(wave_phase(x_ind,y_ind,wave)).to_netcdf(f"{out_dir}/phase/phase_{wave}_{self.wave_lon[0]}-{self.wave_lon[1]}.nc")
 
     def calc_prob(self,waves=['Kelv','R1'],pc=10,region='PM',seas='DJF'):
         
@@ -299,8 +336,10 @@ class HybridWave:
         pi2=prob_construct_single(hiw_ind,region=region,seas=seas,wave=waves[1],pc=pc)
         pi=prob_construct_dual(hiw_ind,region=region,seas=seas,waves=waves,pc=pc)
 
-        wave1 = xr.open_dataset(f"/gws/nopw/j04/ncas_climate_vol1/users/bc917929/GLOSEA6_wave/phase/phase_{waves[0]}_{self.wave_lon[0]}-{self.wave_lon[1]}.nc")
-        wave2 = xr.open_dataset(f"/gws/nopw/j04/ncas_climate_vol1/users/bc917929/GLOSEA6_wave/phase/phase_{waves[1]}_{self.wave_lon[0]}-{self.wave_lon[1]}.nc")
+        #insert own dir for wave phase data (calculated using calc_phase())
+        in_dir = './'
+        wave1 = xr.open_dataset(f"{in_dir}phase/phase_{waves[0]}_{self.wave_lon[0]}-{self.wave_lon[1]}.nc")
+        wave2 = xr.open_dataset(f"{in_dir}phase/phase_{waves[1]}_{self.wave_lon[0]}-{self.wave_lon[1]}.nc")
 
         self.wave1_phase = create_phase(wave1.wave_phase,wave1.wave_amplitude,max_amp=2)
         self.wave2_phase = create_phase(wave2.wave_phase,wave2.wave_amplitude,max_amp=2)
@@ -322,7 +361,9 @@ class HybridWave:
         condprob_wave2.name = f'{waves[1]}_cond'
 
         self.condprobs = xr.merge([condprob_dual,condprob_wave1,condprob_wave2],compat='override')
-        self.condprobs.to_netcdf(f"/gws/nopw/j04/ncas_climate_vol1/users/bc917929/GLOSEA6_wave/condprob/condprob_{waves[0]}_{waves[1]}_{self.wave_lon[0]}-{self.wave_lon[1]}_pc{pc}_{region}_{seas}.nc")
+
+        out_dir = './'
+        self.condprobs.to_netcdf(f"{out_dir}condprob/condprob_{waves[0]}_{waves[1]}_{self.wave_lon[0]}-{self.wave_lon[1]}_pc{pc}_{region}_{seas}.nc")
 
 if __name__ == '__main__':
     #calculate pis and save
