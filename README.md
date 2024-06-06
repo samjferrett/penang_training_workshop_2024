@@ -1,6 +1,6 @@
 # <p align="center">WCSSP: SE Asia annual meeting 2024 Training Workshop slides - Hybrid dynamical-statistical forecasting</p>
 
-Files needed to replicate figures presented in WCSSP: SE Asia annual meeting 2024 Training Workshop "Hybrid dynamical-statistical forecasting" plus some additional methodology functions.
+Python files needed to replicate figures presented in WCSSP: SE Asia annual meeting 2024 Training Workshop "Hybrid dynamical-statistical forecasting" plus some additional methodology functions.
 
 ## Files
 
@@ -30,14 +30,30 @@ Functions included:
    
 ### wave_functions.py
 Supplemental wave methodology function
-1. phase_func() - Calculating phase of waves given x and y as detailed in Yang et al. 2021 (https://doi.org/10.1175/WAF-D-20-0144.1)
+1. phase_func() - Calculating phase of waves given x/W1 and y/W2 as detailed in Yang et al. 2021 Table 1 (https://doi.org/10.1175/WAF-D-20-0144.1)
+   
 ### calc_hiw_data.py
-   -
-### calc_wave_event.py
-   -
-### calc_wave_phases.ipynb
-   -
+An example script that calculates a heavy rainfall metric for use in hybrid rainfall calculation. In this instance we define an event where a threshold percentage of rainfall over land is greater than the 95th percentile of rainfall over the region (area_thres). area_thres is defined such that the event occurs 10% of the time in climatology (2001-2014).
 
 ## Inputs required
 
+- gpm_pr_anom_event.nc : GPM-IMERG anomaly for event period
+- Kelv_event.nc : ERA5 Kelvin wave activity for event period
+- R1_event.nc : ERA5 R1 wave activity for event period
+- WMRG_event.nc : ERA5 WMRG wave activity for event period
+- GPM_hiw_pc10_PM_DJF.nc and GPM_hiw_pc10_PM_SON.nc : heavy rainfall index for GPM-IMERG calculated using calc_hiw_data.py
+- phase_{w}_99.5-104.5.nc where w is 'Kelv', 'R1' and 'WMRG' : wave phase information for GloSea6 forecasts for longitude range 99.5-104.5
+- pi_PM_DJF_*_pc10.nc : conditional probabilities for various wave combinations, calculated using hybrid_functions.py
+- GS6_pr_event.nc : GloSea6 probability of heavy rainfall (direct forecast) for event period
+- PM_condprobs_pc90_DJF_native.nc : atmospheric regime-based probabilities for interest (methods can be supplies on request from s.j.ferrett@reading.ac.uk)
+
 ## Package requirements
+- xarray
+- xesmf
+- matplotlib
+- numpy
+- scipy
+- seaborn
+- dask (optional, if don't have remove "with ProgressBar():" lines to remove progress indicators when computing data)
+- cartopy
+- pandas
