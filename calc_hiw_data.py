@@ -14,7 +14,8 @@ seas = 'SON'
 
 #load precipitation data (can be retrieved from 
 #https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGDF_07/summary?keywords=%22IMERG%20final%22
-gpm_dir = "/gws/nopw/j04/ncas_climate_vol1/users/bc917929/GPM_Final/GPM_day/"
+#put in own data dir here
+gpm_dir = "./gpm/"
 pr_ncs = xr.open_mfdataset(f'{gpm_dir}gpm_day*.nc')
 
 #mask data and calculate thresholds
