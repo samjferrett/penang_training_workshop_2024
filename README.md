@@ -5,7 +5,7 @@ Python files needed to replicate figures presented in WCSSP: SE Asia annual meet
 ## Files
 
 ### case_example.ipynb
-This is the main file used to produce figures for the training session slides. Precalculated data to run will be available as soon as possible. This will be updated then.
+This is the main file used to produce figures for the training session slides. Precalculated data to run currently available via google drive link https://drive.google.com/file/d/151D1neNsRBWIL6p0FNxoWZPgNv4Z4y9C/view?usp=sharing (zip file of 223 mb). Soon available on jasmin seasia workspace.
 The event is from the 7th December 2022 in Peninsular Malaysia.
 The script produces the following figures in order:
 1. GPM-IMERG rainfall anomaly contours and ERA5 equatorial wave data for 3 days (6th December 2022 - 8th December 2022)
