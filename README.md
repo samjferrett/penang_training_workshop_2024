@@ -5,7 +5,7 @@ Python files needed to replicate figures presented in WCSSP: SE Asia annual meet
 ## Files
 
 ### case_example.ipynb
-This is the main file used to produce figures for the training session slides. Data to run is available...
+This is the main file used to produce figures for the training session slides. Precalculated data to run will be available as soon as possible. This will be updated then.
 The event is from the 7th December 2022 in Peninsular Malaysia.
 The script produces the following figures in order:
 1. GPM-IMERG rainfall anomaly contours and ERA5 equatorial wave data for 3 days (6th December 2022 - 8th December 2022)
@@ -19,7 +19,7 @@ The script produces the following figures in order:
 Before plots 4. there is a function defined called build_hybrid() that shows how to calculate the hybrid forecast given wave types to use, a region, a season and a heavy rainfall event frequency. This iteration of the method requires pre-calculated datasets and so does not work for other inputs than region='PM', season='DJF' and pc=10 currently, though these required datasets can be calculated using supplied additional functions.
 
 ### hybrid_functions.py
-A set of functions that can be used to calculate conditional probabilities required for the hybrid method. Plus a class that demonstrates applying the hybrid forecast methodology to preexisting ensemble forecast data. Functions require GPM and GPM landsea mask also which can be retrieved at https://gpm.nasa.gov/data/directory. ERA5 wave phase files are available on request (s.j.ferrett@reading.ac.uk).
+A set of functions that can be used to calculate conditional probabilities required for the hybrid method. Plus a class that demonstrates applying the hybrid forecast methodology to preexisting ensemble forecast data. Functions require GPM and GPM landsea mask also which can be retrieved at https://gpm.nasa.gov/data/directory. ERA5 wave phase files are available on request (s.j.ferrett@reading.ac.uk) though the phase data for this event has been provided.
 
 Functions included:
 1. find_areathres() - Calculates the local 95th percentile rainfall threshold and the area threshold required for pc,
