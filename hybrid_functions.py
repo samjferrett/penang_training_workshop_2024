@@ -142,7 +142,7 @@ def mask_gpm(gpm_nc,region='PM',regrid=False,res=1.):
 
 def prob_construct_waves(region='EM',seas='DJF',waves=['Kelv','R1'],pc=10):
     '''
-    Calculate and save conditional probabilities as described in Ferrett et al (2023)
+    Calculate and save conditional probabilities (pi) as described in Ferrett et al (2023)
 
     Inputs
     ---
@@ -181,6 +181,7 @@ def prob_construct_waves(region='EM',seas='DJF',waves=['Kelv','R1'],pc=10):
     #calculated using calc_hiw_data.py
     hiw_ind = xr.open_dataset(f'./inputs/GPM_hiw_pc{pc:02d}_{region}_{seas}.nc').sel(time=slice('2001','2014'))
 
+    #reformat wave phase into a dataframe for further calculations
     nbins = 2 if len(waves)==2 else 3
 
     wave_df = pd.DataFrame({'time':wave_nc.time.values})
@@ -192,12 +193,15 @@ def prob_construct_waves(region='EM',seas='DJF',waves=['Kelv','R1'],pc=10):
         wave_df[f'{w}_amp_dis'] = pd.cut(wave_df[f'{w}_amp'], list(np.arange(nbins))+[ float('inf')],labels=list(np.arange(nbins).astype('float')))
         wave_df[f'{w}_comb'] = wave_df[f'{w}_phase'].astype(int).astype(str) + wave_df[f'{w}_amp_dis'].astype(int).astype(str)
         wave_df[f'{w}_comb'] = wave_df[f'{w}_comb'].where(wave_df[f'{w}_amp_dis'].astype(int)!=0,'0')
-        
+
+    #get indices and waves of months being used for hybrid forecast (pi differs depending on this)
     s_ind = {'DJF':[12,1,2], 'MAM':[3,4,5], 'JJA':[6,7,8], 'SON':[9,10,11],'OND':[10,11,12]}[seas]
     wave_seas = wave_df.loc[wave_df.time.apply(lambda x: x.month in s_ind and 2001<=x.year<=2014)]
 
+    #observed hiw events, rainfall count exceeding a certain threshold (1 or 0)
     hiw_ind = hiw_ind.pr_count>hiw_ind.attrs['area_thres']
-    
+
+    #calculating conditional probability (pi) depending on 1 wave or 2 waves
     if len(waves)==2:
         df = pd.DataFrame({waves[0]:wave_seas.loc[:,f'{waves[0]}_comb'],waves[1]:wave_seas.loc[:,f'{waves[1]}_comb'],'hiw':hiw_ind.values})
         df['comb_phase'] = df[waves[0]].str[0]+df[waves[1]].str[0]
