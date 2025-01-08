@@ -1,6 +1,8 @@
 import xarray as xr
 import numpy as np
-import xesmf as xe
+#if don't have xesmf substitute iris
+#import xesmf as xe
+import iris
 from dask.diagnostics import ProgressBar
 from scipy import interpolate
 import pandas as pd
@@ -53,6 +55,25 @@ def find_areathres(gpm_sub,pc=10,season='DJF'):
     #return the spatial threshold and the area threshold
     return pc95,area_thres,bool_count
 
+def iris_regrid(in_nc,rg_nc):
+    '''
+    regrids iris Cube in_nc to the grid of rg_nc and returns as xarray.DataArray out_nc
+    '''
+    for c in ['latitude','longitude']:
+        try:
+            rg_nc.coord(c).guess_bounds()
+        except:
+            pass
+        try:
+            in_nc.coord(c).guess_bounds()
+        except:
+            pass
+    scheme = iris.analysis.AreaWeighted(mdtol=0.5)
+
+    out_nc = in_nc.regrid(rg_nc, scheme)
+    out_nc = xr.DataArray.from_iris(out_nc)
+    return out_nc
+    
 def mask_gpm(gpm_nc,region='PM',regrid=False,res=1.):
     '''
     Mask rainfall data except the provided region. Regridding optional
@@ -109,10 +130,18 @@ def mask_gpm(gpm_nc,region='PM',regrid=False,res=1.):
     
     #if rainfall and mask not same resolution will perform a regrid
     if ~np.array_equal(mask_nc.lon,GPM_nc.lon) or ~np.array_equal(mask_nc.lon,GPM_nc.lon):
-        regridder = xe.Regridder(GPM_nc,mask_nc,"conservative")
-        GPM_nc = regridder(GPM_nc)
-    
+        #if have xesmf use this else iris
+        #regridder = xe.Regridder(GPM_nc,mask_nc,"conservative")
+        #GPM_nc = regridder(GPM_nc)
+        
+        #iris option
+        mask_nc = mask_nc.to_iris()
+        GPM_nc = GPM_nc.to_iris()
+
+        GPM_nc = iris_regrid(GPM_nc,mask_nc)            
+        
     #add time to mask to make masking easier
+    mask_nc = xr.DataArray.from_iris(mask_nc)
     time_ind = [i for i in GPM_nc.dims].index('time')
     mask_nc = mask_nc.expand_dims({'time':np.shape(GPM_nc)[time_ind]}, 0)
     mask_nc = mask_nc.assign_coords({'time':GPM_nc.time})
@@ -126,10 +155,15 @@ def mask_gpm(gpm_nc,region='PM',regrid=False,res=1.):
                 "lon": (["lon"], np.arange(90, 151, res), {"units": "degrees_east","standard_name":"longitude"}),
             }
         )
-        mask_regridder = xe.Regridder(mask_nc, ds_out, "conservative")
-        mask_nc = mask_regridder(mask_nc)
-        gpm_regridder = xe.Regridder(GPM_nc, ds_out, "conservative")
-        GPM_nc = gpm_regridder(GPM_nc)
+        #xesmf option
+        #mask_regridder = xe.Regridder(mask_nc, ds_out, "conservative")
+        #mask_nc = mask_regridder(mask_nc)
+        #gpm_regridder = xe.Regridder(GPM_nc, ds_out, "conservative")
+        #GPM_nc = gpm_regridder(GPM_nc)
+
+        #iris option
+        GPM_nc = iris_regrid(GPM_nc.to_iris(),ds_out.newgrid.to_iris())
+        mask_nc = iris_regrid(mask_nc.to_iris(),ds_out.newgrid.to_iris())
         
     dims=GPM_nc.dims
     mask_nc = mask_nc.transpose(*dims)
